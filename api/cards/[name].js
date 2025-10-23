@@ -1,13 +1,33 @@
-import fs from "fs";
+const fs = require("fs");
+const path = require("path");
 
 export default function handler(req, res) {
-  const { name } = req.query;
-  const data = JSON.parse(fs.readFileSync("tarot_deck_78.json", "utf-8"));
-  const card = data.cards.find(
-    (c) => c.name.toLowerCase() === decodeURIComponent(name).toLowerCase()
-  );
-  if (!card) return res.status(404).json({ error: "Card not found" });
+  try {
+    // หา path ที่แท้จริงของไฟล์ JSON
+    const filePath = path.join(process.cwd(), "tarot_deck_78.json");
+    const jsonData = fs.readFileSync(filePath, "utf-8");
+    const data = JSON.parse(jsonData);
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.status(200).json(card);
+    const { name } = req.query;
+    const decodedName = decodeURIComponent(name).toLowerCase();
+
+    // ค้นหาการ์ดตามชื่อ
+    const card = data.cards.find(
+      (c) => c.name.toLowerCase() === decodedName
+    );
+
+    if (!card) {
+      res.status(404).json({ error: "Card not found" });
+      return;
+    }
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.status(200).json(card);
+  } catch (error) {
+    console.error("Error reading tarot_deck_78.json:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
 }
